@@ -104,7 +104,7 @@ module Sentry
 
         "https://console.aws.amazon.com/cloudwatch/home?region=#{region}" \
         "#logEventViewer:group=#{aws_context.log_group};stream=#{aws_context.log_stream}" \
-        ";start=#{start_time.strftime(formatstring)};end=#{end_time.strftime(formatstring)}"
+        ";start=#{start_time.strftime(formatstring)};end=#{(Time.now.utc + 2).strftime(formatstring)}"
       end
     end
   end
