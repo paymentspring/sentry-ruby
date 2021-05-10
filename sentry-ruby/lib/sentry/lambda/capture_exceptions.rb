@@ -17,7 +17,7 @@ module Sentry
           puts "start_time ::: #{start_time}"
           initial_remaining_time_in_milis = @aws_context.get_remaining_time_in_millis
           puts "initial_remaining_time_in_milis ::: #{initial_remaining_time_in_milis}"
-          execution_expiration_time = Time.now.utc + (initial_remaining_time_in_milis || 0)
+          execution_expiration_time = Time.now.utc + ((initial_remaining_time_in_milis || 0)/1000)
           puts "execution_expiration_time ::: #{execution_expiration_time}"
 
           scope.clear_breadcrumbs
