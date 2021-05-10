@@ -32,7 +32,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
     end
 
     it "allows for shorthand syntax" do
-      response = Sentry::Lambda.capture_exceptions(aws_event, aws_context) do
+      response = Sentry::Lambda.capture_exceptions(event: aws_event, context: aws_context) do
         happy_response
       end
 
@@ -41,7 +41,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
 
     it 'captures the exception from direct raise' do
       app = ->(_e) { raise exception }
-      stack = described_class.new(aws_event, aws_context)
+      stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
 
       expect do
         stack.call do
@@ -71,7 +71,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
     end
 
     it 'returns happy result' do
-      stack = described_class.new(aws_event, aws_context)
+      stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
       expect do
         stack.call { happy_response }
       end.to_not raise_error
@@ -87,7 +87,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
 
         logger.info("old breadcrumb")
 
-        app_1 = described_class.new(aws_event, aws_context)
+        app_1 = described_class.new(aws_event: aws_event, aws_context: aws_context)
 
         app_1.call do
           logger.info("request breadcrumb")
@@ -100,7 +100,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
         expect(event.breadcrumbs.peek.message).to eq("request breadcrumb")
       end
       it "doesn't pollute the top-level scope" do
-        app_1 = described_class.new(aws_event, aws_context)
+        app_1 = described_class.new(aws_event: aws_event, aws_context: aws_context)
 
         app_1.call do
           Sentry.configure_scope { |s| s.set_tags({tag_1: "foo"}) }
@@ -113,7 +113,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
         expect(Sentry.get_current_scope.tags).to eq(tag_1: "don't change me")
       end
       it "doesn't pollute other request's scope" do
-        app_1 = described_class.new(aws_event, aws_context)
+        app_1 = described_class.new(aws_event: aws_event, aws_context: aws_context)
         app_1.call do
           Sentry.configure_scope { |s| s.set_tags({tag_1: "foo"}) }
           Sentry.capture_message('capture me')
@@ -124,7 +124,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
         expect(event.tags).to eq(tag_1: "foo")
         expect(Sentry.get_current_scope.tags).to eq(tag_1: "don't change me")
 
-        app_2 = described_class.new(aws_event, aws_context)
+        app_2 = described_class.new(aws_event: aws_event, aws_context: aws_context)
 
         app_2.call do
           Sentry.configure_scope { |s| s.set_tags({tag_2: "bar"}) }
@@ -152,7 +152,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       end
 
       it "starts a span and finishes it" do
-        described_class.new(aws_event, aws_context).call do
+        described_class.new(aws_event: aws_event, aws_context: aws_context).call do
           happy_response
         end
 
@@ -171,7 +171,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       end
 
       it "doesn't do anything" do
-        described_class.new(aws_event, aws_context) do
+        described_class.new(aws_event: aws_event, aws_context: aws_context) do
           happy_response
         end
 
@@ -186,7 +186,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
 
       it "still finishes the transaction" do
         expect do
-          described_class.new(aws_event, aws_context).call do
+          described_class.new(aws_event: aws_event, aws_context: aws_context).call do
             raise 'foo'
           end
         end.to raise_error("foo")
@@ -212,7 +212,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       end
 
       it "doesn't record transaction" do
-        described_class.new(aws_event, aws_context) { happy_response }
+        described_class.new(aws_event: aws_event, aws_context: aws_context) { happy_response }
 
         expect(transport.events.count).to eq(0)
       end
@@ -231,7 +231,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
         let(:aws_event) { { 'HTTP_SENTRY_TRACE' => external_transaction.to_sentry_trace } }
 
         it "doesn't cause the transaction to be recorded" do
-          response = described_class.new(aws_event, aws_context).call { happy_response }
+          response = described_class.new(aws_event: aws_event, aws_context: aws_context).call { happy_response }
 
           expect(response[:statusCode]).to eq(200)
           expect(transport.events).to be_empty

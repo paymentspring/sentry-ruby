@@ -3,7 +3,7 @@ module Sentry
     class CaptureExceptions
       TIMEOUT_WARNING_BUFFER = 1500  # Buffer time required to send timeout warning to Sentry
 
-      def initialize(aws_event, aws_context, catpure_timeout_warning = false)
+      def initialize(aws_event:, aws_context:, catpure_timeout_warning: false)
         @aws_event = aws_event
         @aws_context = aws_context
         @catpure_timeout_warning = catpure_timeout_warning
