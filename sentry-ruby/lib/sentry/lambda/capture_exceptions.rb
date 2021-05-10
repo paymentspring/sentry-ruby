@@ -14,12 +14,13 @@ module Sentry
 
         if @catpure_timeout_warning
           Thread.new do
-            configured_time_out = @aws_context.get_remaining_time_in_millis / 1000.0
+            configured_timeout_seconds = @aws_context.get_remaining_time_in_millis / 1000.0
+            sleep_timeout_seconds = ((@aws_context.get_remaining_time_in_millis - TIMEOUT_WARNING_BUFFER) / 1000.0)
 
             timeout_message = "WARNING : Function is expected to get timed out. "\
-                              "Configured timeout duration = #{configured_time_out.round} seconds."
+                              "Configured timeout duration = #{configured_timeout_seconds.round} seconds."
 
-            sleep(configured_time_out - TIMEOUT_WARNING_BUFFER)
+            sleep(sleep_timeout_seconds)
             Sentry.capture_message(timeout_message)
           end
         end
