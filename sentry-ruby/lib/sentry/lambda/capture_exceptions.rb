@@ -15,12 +15,13 @@ module Sentry
         Sentry.with_scope do |scope|
           start_time = Time.now.utc
           initial_remaining_time_in_milis = @aws_context.get_remaining_time_in_millis
+          execution_expiration_time = Time.now.utc + (@aws_context&.get_remaining_time_in_millis || 0)
           scope.clear_breadcrumbs
           scope.set_transaction_name(@aws_context.function_name)
 
           scope.add_event_processor do |event, hint|
-            puts "event.timestamp ::: #{event&.timestamp}"
             event_time = Time.parse(event.timestamp) rescue Time.now.utc
+            remaining_time_in_millis = execution_expiration_time - event_time
             execution_duration_in_millis = ((event_time - start_time) * 1000).round
             event.extra = event.extra.merge(
               lambda: {
@@ -29,7 +30,7 @@ module Sentry
                 invoked_function_arn: @aws_context.invoked_function_arn,
                 aws_request_id: @aws_context.aws_request_id,
                 execution_duration_in_millis: execution_duration_in_millis,
-                allowed_durration: initial_remaining_time_in_milis
+                remaining_time_in_millis: remaining_time_in_millis
               }
             )
 
