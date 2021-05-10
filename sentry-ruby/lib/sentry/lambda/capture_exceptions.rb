@@ -1,9 +1,9 @@
 module Sentry
   module Lambda
     class CaptureExceptions
-      def initialize(event, context)
-        @event = event
-        @context = context
+      def initialize(aws_event, aws_context)
+        @aws_event = aws_event
+        @aws_context = aws_context
       end
 
       def call(&block)
@@ -13,26 +13,30 @@ module Sentry
         Sentry.clone_hub_to_current_thread
 
         Sentry.with_scope do |scope|
-          remaining_time_in_milis = @context.get_remaining_time_in_millis
+          start_time = Time.now.utc
+          initial_remaining_time_in_milis = @aws_context.get_remaining_time_in_millis
           scope.clear_breadcrumbs
-          scope.set_transaction_name(@context.function_name)
+          scope.set_transaction_name(@aws_context.function_name)
 
           scope.add_event_processor do |event, hint|
+            puts "event.timestamp ::: #{event&.timestamp}"
+            event_time = Time.parse(event.timestamp) rescue Time.now.utc
+            execution_duration_in_millis = ((event_time - start_time) * 1000).round
             event.extra = event.extra.merge(
               lambda: {
-                function_name: @context.function_name,
-                function_version: @context.function_version,
-                invoked_function_arn: @context.invoked_function_arn,
-                aws_request_id: @context.aws_request_id,
-                # execution_duration_in_millis: exec_duration,
-                remaining_time_in_millis: remaining_time_in_milis,
+                function_name: @aws_context.function_name,
+                function_version: @aws_context.function_version,
+                invoked_function_arn: @aws_context.invoked_function_arn,
+                aws_request_id: @aws_context.aws_request_id,
+                execution_duration_in_millis: execution_duration_in_millis,
+                allowed_durration: initial_remaining_time_in_milis
               }
             )
 
             event
           end
 
-          transaction = start_transaction(@event, @context, scope.transaction_name)
+          transaction = start_transaction(@aws_event, @aws_context, scope.transaction_name)
           scope.set_span(transaction) if transaction
 
           begin
