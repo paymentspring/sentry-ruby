@@ -103,7 +103,7 @@ module Sentry
         region = ENV['AWS_REGION']
 
         "https://console.aws.amazon.com/cloudwatch/home?region=#{region}" \
-        "#logEventViewer:group=#{aws_context.log_group};stream=#{aws_context.log_stream}" \
+        "#logEventViewer:group=#{aws_context.log_group_name};stream=#{aws_context.log_stream_name}" \
         ";start=#{start_time.strftime(formatstring)};end=#{(Time.now.utc + 2).strftime(formatstring)}"
       end
     end
