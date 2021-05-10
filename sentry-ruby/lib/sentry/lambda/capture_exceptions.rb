@@ -13,9 +13,24 @@ module Sentry
         Sentry.clone_hub_to_current_thread
 
         Sentry.with_scope do |scope|
+          remaining_time_in_milis = @context.get_remaining_time_in_millis
           scope.clear_breadcrumbs
           scope.set_transaction_name(@context.function_name)
-          # TODO: sometning like - `scope.set_rack_env(env)`
+
+          scope.add_event_processor do |event, hint|
+            event.extra = event.extra.merge(
+              lambda: {
+                function_name: @context.function_name,
+                function_version: @context.function_version,
+                invoked_function_arn: @context.invoked_function_arn,
+                aws_request_id: @context.aws_request_id,
+                # execution_duration_in_millis: exec_duration,
+                remaining_time_in_millis: remaining_time_in_milis,
+              }
+            )
+
+            event
+          end
 
           transaction = start_transaction(@event, @context, scope.transaction_name)
           scope.set_span(transaction) if transaction
