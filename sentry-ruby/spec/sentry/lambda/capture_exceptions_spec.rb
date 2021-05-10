@@ -32,7 +32,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
     end
 
     it "allows for shorthand syntax" do
-      response = Sentry::Lambda.capture_exceptions(event: aws_event, context: aws_context) do
+      response = Sentry::Lambda.wrap_handler(event: aws_event, context: aws_context) do
         happy_response
       end
 
