@@ -13,7 +13,7 @@ module Sentry
         return yield unless Sentry.initialized?
 
         if @catpure_timeout_warning
-          timeout_thread = Tread.new do
+          Thread.new do
             configured_time_out = @aws_context.get_remaining_time_in_millis / 1000.0
 
             timeout_message = "WARNING : Function is expected to get timed out. "\
