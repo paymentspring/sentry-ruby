@@ -38,6 +38,14 @@ module Sentry
               }
             )
 
+            event.extra = event.extra.merge(
+              "cloudwatch logs": {
+                url: _get_cloudwatch_logs_url(@aws_context, start_time),
+                log_group: @aws_context.log_group_name,
+                log_stream: @aws_context.log_stream_name
+              }
+            )
+
             event
           end
 
@@ -88,6 +96,15 @@ module Sentry
 
       def capture_exception(exception)
         Sentry.capture_exception(exception)
+      end
+
+      def _get_cloudwatch_logs_url(aws_context, start_time)
+        formatstring = "%Y-%m-%dT%H:%M:%SZ"
+        region = ENV['AWS_REGION']
+
+        "https://console.aws.amazon.com/cloudwatch/home?region=#{region}" \
+        "#logEventViewer:group=#{aws_context.log_group};stream=#{aws_context.log_stream}" \
+        ";start=#{start_time.strftime(formatstring)};end=#{end_time.strftime(formatstring)}"
       end
     end
   end
