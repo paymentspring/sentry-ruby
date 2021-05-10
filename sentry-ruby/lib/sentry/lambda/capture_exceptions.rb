@@ -25,7 +25,7 @@ module Sentry
 
           scope.add_event_processor do |event, hint|
             event_time = Time.parse(event.timestamp) rescue Time.now.utc
-            remaining_time_in_millis = execution_expiration_time - event_time
+            remaining_time_in_millis = ((event_time - execution_expiration_time) * 1000).round
             execution_duration_in_millis = ((event_time - start_time) * 1000).round
             event.extra = event.extra.merge(
               lambda: {
