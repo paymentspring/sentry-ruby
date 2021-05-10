@@ -1,13 +1,28 @@
 module Sentry
   module Lambda
     class CaptureExceptions
-      def initialize(aws_event, aws_context)
+      TIMEOUT_WARNING_BUFFER = 1500  # Buffer time required to send timeout warning to Sentry
+
+      def initialize(aws_event, aws_context, catpure_timeout_warning = false)
         @aws_event = aws_event
         @aws_context = aws_context
+        @catpure_timeout_warning = catpure_timeout_warning
       end
 
       def call(&block)
         return yield unless Sentry.initialized?
+
+        if @catpure_timeout_warning
+          timeout_thread = Tread.new do
+            configured_time_out = @aws_context.get_remaining_time_in_millis / 1000.0
+
+            timeout_message = "WARNING : Function is expected to get timed out. "\
+                              "Configured timeout duration = #{configured_time_out.round} seconds."
+
+            sleep(configured_time_out - TIMEOUT_WARNING_BUFFER)
+            Sentry.capture_message(timeout_message)
+          end
+        end
 
         # make sure the current thread has a clean hub
         Sentry.clone_hub_to_current_thread
@@ -64,6 +79,8 @@ module Sentry
           end
 
           finish_transaction(transaction, response[:statusCode])
+
+          timeout_thread&.kill
 
           response
         end
