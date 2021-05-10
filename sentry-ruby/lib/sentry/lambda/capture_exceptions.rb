@@ -14,8 +14,12 @@ module Sentry
 
         Sentry.with_scope do |scope|
           start_time = Time.now.utc
+          puts "start_time ::: #{start_time}"
           initial_remaining_time_in_milis = @aws_context.get_remaining_time_in_millis
-          execution_expiration_time = Time.now.utc + (@aws_context&.get_remaining_time_in_millis || 0)
+          puts "initial_remaining_time_in_milis ::: #{initial_remaining_time_in_milis}"
+          execution_expiration_time = Time.now.utc + (initial_remaining_time_in_milis || 0)
+          puts "execution_expiration_time ::: #{execution_expiration_time}"
+
           scope.clear_breadcrumbs
           scope.set_transaction_name(@aws_context.function_name)
 
