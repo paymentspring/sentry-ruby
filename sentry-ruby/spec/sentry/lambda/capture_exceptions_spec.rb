@@ -46,7 +46,6 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
     end
 
     it 'captures the exception from direct raise' do
-      app = ->(_e) { raise exception }
       stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
 
       expect do
@@ -56,7 +55,8 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       end.to raise_error(ZeroDivisionError)
 
       event = transport.events.last
-      # TODO: event does not have request
+      expect(event).to be_truthy
+      # TODO: event does not have request - handle aws_event request data
       # expect(event.to_hash.dig(:request, :url)).to eq("http://example.org/test")
     end
 
