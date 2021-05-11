@@ -37,7 +37,7 @@ module Sentry
           scope.set_transaction_name(@aws_context.function_name)
 
           scope.add_event_processor do |event, hint|
-            event_time = Time.parse(event.timestamp) rescue Time.now.utc
+            event_time = event.timestamp.is_a?(Float) ? Time.at(event.timestamp) : Time.parse(event.timestamp)
             remaining_time_in_millis = ((execution_expiration_time - event_time) * 1000).round
             execution_duration_in_millis = ((event_time - start_time) * 1000).round
             event.extra = event.extra.merge(

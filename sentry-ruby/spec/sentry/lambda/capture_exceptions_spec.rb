@@ -7,9 +7,15 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
   let(:aws_event) do
     {}
   end
+  let(:aws_context_remaining_time) { 0 }
+
   let(:aws_context) do
     OpenStruct.new(
-      function_name: 'my-function'
+      function_name: 'my-function',
+      function_version: 'my-function-version',
+      invoked_function_arn: 'my-function-arn',
+      aws_request_id: 'my-aws-request-id',
+      get_remaining_time_in_millis: aws_context_remaining_time
     )
   end
   let(:happy_response) do
@@ -54,20 +60,46 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       # expect(event.to_hash.dig(:request, :url)).to eq("http://example.org/test")
     end
 
-    xit 'sets the transaction and something like rack env' do
-      app = lambda do |e|
-        e['rack.exception'] = exception
-        [200, {}, ['okay']]
+    context 'considering remaining execution time' do
+      let!(:now) { Time.now }
+      let(:aws_context_remaining_time) { 6875 } # Simulates a 7 second function timeout
+
+      after do
+        Timecop.return
       end
-      stack = described_class.new(app)
 
-      stack.call(env)
+      it 'sets the transaction and captures extras' do
+        Timecop.freeze(now)
 
-      event = transport.events.last
-      expect(event.transaction).to eq("/test")
-      # expect(event.to_hash.dig(:request, :url)).to eq("http://example.org/test")
-      expect(Sentry.get_current_scope.transaction_names).to be_empty
-      expect(Sentry.get_current_scope.rack_env).to eq({})
+        stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
+
+        stack.call do
+          Timecop.freeze(now + 3)
+          Sentry.capture_message('test')
+          happy_response
+        end
+
+        event = transport.events.last
+        expect(event.transaction).to eq("my-function")
+        expect(event.extra.keys).to eq([:lambda, :'cloudwatch logs'])
+
+        expect(event.extra[:lambda][:function_name]).to eq 'my-function'
+        expect(event.extra[:lambda][:function_version]).to eq 'my-function-version'
+        expect(event.extra[:lambda][:invoked_function_arn]).to eq 'my-function-arn'
+        expect(event.extra[:lambda][:aws_request_id]).to eq 'my-aws-request-id'
+
+        duration = event.extra.dig(:lambda, :execution_duration_in_millis)
+        expect(duration).to be > 2000
+        expect(duration).to be <= 3000
+
+        remaining_time = event.extra.dig(:lambda, :remaining_time_in_millis)
+        expect(remaining_time).to be >= 4000
+        expect(remaining_time).to be < 7000
+
+        expect(event.extra[:'cloudwatch logs'].keys).to eq(%i[url log_group log_stream])
+        expect(Sentry.get_current_scope.transaction_names).to be_empty
+        expect(Sentry.get_current_scope.rack_env).to eq({})
+      end
     end
 
     it 'returns happy result' do
