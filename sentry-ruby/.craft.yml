@@ -3,7 +3,6 @@ github:
     owner: getsentry
     repo: sentry-ruby
 changelogPolicy: simple
-changelog: sentry-ruby/CHANGELOG.md
 preReleaseCommand: ruby ../.scripts/bump-version.rb
 releaseBranchPrefix: release-sentry-ruby
 statusProvider:
