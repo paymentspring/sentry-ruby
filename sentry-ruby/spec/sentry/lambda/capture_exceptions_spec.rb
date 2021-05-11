@@ -122,6 +122,12 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       end
     end
 
+    context "handler does not return a hash response" do
+      it 'does not raise an error' do
+        expect { described_class.new(aws_event: aws_event, aws_context: aws_context).call {} }.not_to raise_error
+      end
+    end
+
     it 'returns happy result' do
       stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
       expect do

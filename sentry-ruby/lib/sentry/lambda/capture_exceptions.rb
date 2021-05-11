@@ -76,7 +76,8 @@ module Sentry
             raise
           end
 
-          finish_transaction(transaction, response[:statusCode])
+          status_code = response&.dig(:statusCode) || response&.dig('statusCode')
+          finish_transaction(transaction, status_code)
 
           response
         end
