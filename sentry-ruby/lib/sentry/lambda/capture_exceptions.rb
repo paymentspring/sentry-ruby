@@ -83,17 +83,6 @@ module Sentry
       end
 
       def start_transaction(event, context, transaction_name)
-        Sentry.start_transaction(
-          transaction: nil,
-          custom_sampling_context: {
-            aws_event: event,
-            aws_context: context
-          },
-          name: transaction_name, op: 'serverless.function'
-        )
-      end
-
-      def start_transaction(event, context, transaction_name)
         sentry_trace = event["HTTP_SENTRY_TRACE"]
         options = { name: transaction_name, op: 'serverless.function' }
         transaction = Sentry::Transaction.from_sentry_trace(sentry_trace, **options) if sentry_trace
