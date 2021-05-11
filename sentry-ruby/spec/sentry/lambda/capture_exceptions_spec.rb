@@ -103,7 +103,11 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
     end
 
     context 'capture_timeout_warning' do
-      let(:aws_context_remaining_time) { 1500 } #
+      after do
+        Timecop.return
+      end
+
+      let(:aws_context_remaining_time) { 1501 } #
 
       it 'captures a warning message' do
         now = Time.now
@@ -112,7 +116,7 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
         stack = described_class.new(aws_event: aws_event, aws_context: aws_context, capture_timeout_warning: true)
 
         stack.call do
-          sleep 1
+          sleep 2
 
           happy_response
         end
