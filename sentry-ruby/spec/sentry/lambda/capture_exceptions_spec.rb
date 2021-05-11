@@ -102,6 +102,26 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       end
     end
 
+    context 'capture_timeout_warning' do
+      let(:aws_context_remaining_time) { 1500 } #
+
+      it 'captures a warning message' do
+        now = Time.now
+        Timecop.freeze(now)
+
+        stack = described_class.new(aws_event: aws_event, aws_context: aws_context, capture_timeout_warning: true)
+
+        stack.call do
+          sleep 1
+
+          happy_response
+        end
+
+        event = transport.events.last
+        expect(event.message).to eq 'WARNING : Function is expected to get timed out. Configured timeout duration = 2 seconds.'
+      end
+    end
+
     it 'returns happy result' do
       stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
       expect do

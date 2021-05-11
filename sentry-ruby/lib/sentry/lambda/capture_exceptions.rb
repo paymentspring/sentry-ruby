@@ -12,7 +12,7 @@ module Sentry
       def call(&block)
         return yield unless Sentry.initialized?
 
-        if @capture_timeout_warning
+        if @capture_timeout_warning && (@aws_context.get_remaining_time_in_millis > TIMEOUT_WARNING_BUFFER)
           Thread.new do
             configured_timeout_seconds = @aws_context.get_remaining_time_in_millis / 1000.0
             sleep_timeout_seconds = ((@aws_context.get_remaining_time_in_millis - TIMEOUT_WARNING_BUFFER) / 1000.0)
