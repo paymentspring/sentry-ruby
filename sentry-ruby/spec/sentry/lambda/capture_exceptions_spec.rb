@@ -268,6 +268,33 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       end
     end
 
+    context 'when there is as sentry error' do
+      before do
+        allow(Random).to receive(:rand).and_return(0.4)
+      end
+
+      it "still finishes the transaction" do
+        expect do
+          described_class.new(aws_event: aws_event, aws_context: aws_context).call do
+            raise Sentry::Error, 'foo'
+          end
+        end.to raise_error("foo")
+
+        expect(transport.events.count).to eq(1)
+        event = transport.events.first
+        transaction = transport.events.last
+        expect(event.contexts.dig(:trace, :trace_id).length).to eq(32)
+        expect(event.contexts.dig(:trace, :trace_id)).to eq(transaction.contexts.dig(:trace, :trace_id))
+
+
+        expect(transaction.type).to eq("transaction")
+        expect(transaction.timestamp).not_to be_nil
+        expect(transaction.contexts.dig(:trace, :status)).to eq("internal_error")
+        expect(transaction.contexts.dig(:trace, :op)).to eq("serverless.function")
+        expect(transaction.spans.count).to eq(0)
+      end
+    end
+
     context "when traces_sample_rate is not set" do
       before do
         Sentry.configuration.traces_sample_rate = nil
