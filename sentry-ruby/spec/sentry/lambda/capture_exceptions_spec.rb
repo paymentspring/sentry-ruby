@@ -46,13 +46,9 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
     end
 
     it 'captures the exception from direct raise' do
-      stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
+       wrapped_handler = described_class.new(aws_event: aws_event, aws_context: aws_context)
 
-      expect do
-        stack.call do
-          raise exception
-        end
-      end.to raise_error(ZeroDivisionError)
+      expect { wrapped_handler.call { raise exception } }.to raise_error(ZeroDivisionError)
 
       event = transport.events.last
       expect(event).to be_truthy
@@ -71,9 +67,9 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       it 'sets the transaction and captures extras' do
         Timecop.freeze(now)
 
-        stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
+         wrapped_handler = described_class.new(aws_event: aws_event, aws_context: aws_context)
 
-        stack.call do
+         wrapped_handler.call do
           Timecop.freeze(now + 3)
           Sentry.capture_message('test')
           happy_response
@@ -113,9 +109,9 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
         now = Time.now
         Timecop.freeze(now)
 
-        stack = described_class.new(aws_event: aws_event, aws_context: aws_context, capture_timeout_warning: true)
+         wrapped_handler = described_class.new(aws_event: aws_event, aws_context: aws_context, capture_timeout_warning: true)
 
-        stack.call do
+         wrapped_handler.call do
           sleep 2
 
           happy_response
@@ -133,10 +129,8 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
     end
 
     it 'returns happy result' do
-      stack = described_class.new(aws_event: aws_event, aws_context: aws_context)
-      expect do
-        stack.call { happy_response }
-      end.to_not raise_error
+       wrapped_handler = described_class.new(aws_event: aws_event, aws_context: aws_context)
+      expect { wrapped_handler.call { happy_response } }.to_not raise_error
     end
 
     describe "state encapsulation" do
