@@ -57,14 +57,16 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
     end
 
     context 'considering remaining execution time' do
-      let!(:now) { Time.now }
-      let(:aws_context_remaining_time) { 6875 } # Simulates a 7 second function timeout
+      # Simulates a 7 second function timeout
+      # It ends up being a bit less than the configured timeout
+      let(:aws_context_remaining_time) { 6875 }
 
       after do
         Timecop.return
       end
 
       it 'sets the transaction and captures extras' do
+        now = Time.now
         Timecop.freeze(now)
 
          wrapped_handler = described_class.new(aws_event: aws_event, aws_context: aws_context)
@@ -85,12 +87,10 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
         expect(event.extra[:lambda][:aws_request_id]).to eq 'my-aws-request-id'
 
         duration = event.extra.dig(:lambda, :execution_duration_in_millis)
-        expect(duration).to be > 2000
-        expect(duration).to be <= 3000
+        expect(duration).to eq 3000
 
         remaining_time = event.extra.dig(:lambda, :remaining_time_in_millis)
-        expect(remaining_time).to be >= 4000
-        expect(remaining_time).to be < 7000
+        expect(remaining_time).to eq (aws_context_remaining_time - duration)
 
         expect(event.extra[:'cloudwatch logs'].keys).to eq(%i[url log_group log_stream])
         expect(Sentry.get_current_scope.transaction_names).to be_empty
