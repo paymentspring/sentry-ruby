@@ -5,9 +5,9 @@ Gem::Specification.new do |spec|
   spec.version       = Sentry::Lambda::VERSION
   spec.authors = ["Sentry Team"]
   spec.description = spec.summary = "A gem that provides AWS Lambda integration for the Sentry error logger"
-  spec.email = "accounts@sentry.io"
+  spec.email = "gateway@paymentspring.com"
   spec.license = 'Apache-2.0'
-  spec.homepage = "https://github.com/getsentry/sentry-ruby"
+  spec.homepage = "https://github.com/paymentspring/sentry-ruby"
 
   spec.platform = Gem::Platform::RUBY
   spec.required_ruby_version = '>= 2.4'
