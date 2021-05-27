@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+## Bug Fixes
+[sentry-lambda.gemspec]
+Taking ownership of the gem
+
 ## 0.1.1
 ## Bug Fixes
 [sentry-lambda.gemspec]
