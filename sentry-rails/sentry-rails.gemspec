@@ -16,12 +16,12 @@ Gem::Specification.new do |spec|
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
-  spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/master/sentry-rails/CHANGELOG.md"
+  spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/master/CHANGELOG.md"
 
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
   spec.add_dependency "railties", ">= 5.0"
-  spec.add_dependency "sentry-ruby-core", "~> 4.4.0.pre.beta"
+  spec.add_dependency "sentry-ruby-core", "~> 4.5.0-beta.1"
 end
