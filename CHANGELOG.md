@@ -1,3 +1,13 @@
+## 4.5.1
+
+### Bug Fixes
+
+- Remove response from breadcrumb and span [#1463](https://github.com/getsentry/sentry-ruby/pull/1463)
+  - Fixes the issue mentioned in this [comment](https://github.com/getsentry/sentry-ruby/pull/1199#issuecomment-773069840)
+- Correct the timing of loading ActiveJobExtensions [#1464](https://github.com/getsentry/sentry-ruby/pull/1464)
+  - Fixes [#1249](https://github.com/getsentry/sentry-ruby/issues/1249)
+- Limit breadcrumb's message length [#1465](https://github.com/getsentry/sentry-ruby/pull/1465)
+
 ## 4.5.0
 
 ### Features
