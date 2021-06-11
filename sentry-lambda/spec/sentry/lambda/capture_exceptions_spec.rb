@@ -46,6 +46,14 @@ RSpec.describe Sentry::Lambda::CaptureExceptions do
       expect(response).to eq(happy_response)
     end
 
+    it "allows handler to return non-hash" do
+      response = Sentry::Lambda.wrap_handler(event: aws_event, context: aws_context) do
+        true
+      end
+
+      expect(response).to eq(true)
+    end
+
     it "allows for shorthand syntax" do
       response = Sentry::Lambda.wrap_handler(event: aws_event, context: aws_context) do
         happy_response
