@@ -80,7 +80,7 @@ module Sentry
             raise
           end
 
-          status_code = response&.dig(:statusCode) || response&.dig('statusCode')
+          status_code = response.respond_to?(:dig) && (response&.dig(:statusCode) || response&.dig('statusCode')) || nil
           finish_transaction(transaction, status_code)
 
           response
