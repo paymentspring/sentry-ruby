@@ -3,9 +3,9 @@ module Sentry
     class CaptureExceptions
       TIMEOUT_WARNING_BUFFER = 1500 # Buffer time required to send timeout warning to Sentry
 
-      def initialize(aws_event:, aws_context:, capture_timeout_warning: false)
+      def initialize(aws_event:, aws_context: NullContext.new, capture_timeout_warning: false)
         @aws_event = aws_event
-        @aws_context = aws_context
+        @aws_context = aws_context || NullContext.new
         @capture_timeout_warning = capture_timeout_warning
       end
 
@@ -30,8 +30,8 @@ module Sentry
 
         Sentry.with_scope do |scope|
           start_time = Time.now.utc
-          initial_remaining_time_in_milis = @aws_context.get_remaining_time_in_millis
-          execution_expiration_time = Time.now.utc + ((initial_remaining_time_in_milis || 0)/1000.0)
+          initial_remaining_time_in_millis = @aws_context.get_remaining_time_in_millis
+          execution_expiration_time = Time.now.utc + ((initial_remaining_time_in_millis || 0)/1000.0)
 
           scope.clear_breadcrumbs
           scope.set_transaction_name(@aws_context.function_name)
@@ -53,7 +53,11 @@ module Sentry
 
             event.extra = event.extra.merge(
               "cloudwatch logs": {
-                url: _get_cloudwatch_logs_url(@aws_context, start_time),
+                url: _get_cloudwatch_logs_url(
+                  @aws_context.log_group_name,
+                  @aws_context.log_stream_name,
+                  start_time
+                ),
                 log_group: @aws_context.log_group_name,
                 log_stream: @aws_context.log_stream_name
               }
@@ -76,7 +80,7 @@ module Sentry
             raise
           end
 
-          status_code = response&.dig(:statusCode) || response&.dig('statusCode')
+          status_code = response.respond_to?(:dig) && (response&.dig(:statusCode) || response&.dig('statusCode')) || nil
           finish_transaction(transaction, status_code)
 
           response
@@ -101,12 +105,12 @@ module Sentry
         Sentry.capture_exception(exception)
       end
 
-      def _get_cloudwatch_logs_url(aws_context, start_time)
+      def _get_cloudwatch_logs_url(log_group_name, log_stream_name, start_time)
         formatstring = "%Y-%m-%dT%H:%M:%SZ"
         region = ENV['AWS_REGION']
 
         "https://console.aws.amazon.com/cloudwatch/home?region=#{region}" \
-        "#logEventViewer:group=#{aws_context.log_group_name};stream=#{aws_context.log_stream_name}" \
+        "#logEventViewer:group=#{log_group_name};stream=#{log_stream_name}" \
         ";start=#{start_time.strftime(formatstring)};end=#{(Time.now.utc + 2).strftime(formatstring)}"
       end
     end
