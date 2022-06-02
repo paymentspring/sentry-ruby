@@ -45,6 +45,7 @@ def lambda_handler(event:, context:)
   end
 end
 ```
+We experience issue that when function invocation was terminated after 2 seconds, we get warning about timeout. Seems it does not work well. 
 
 ### Integration Specific Configuration
 
